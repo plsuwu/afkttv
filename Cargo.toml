@@ -1,0 +1,19 @@
+[package]
+name = "afkttv"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.86"
+chrono = "0.4.38"
+dirs = "5.0.1"
+futures-channel = "0.3.30"
+futures-util = "0.3.30"
+lazy_static = "1.4.0"
+rand = "0.8.5"
+serde = { version = "1.0.203", features = ["derive"] }
+tokio = { features = ["full"] }
+tokio-tungstenite = { version = "0.23.1", features = ["native-tls"] }
+toml = "0.8.14"
