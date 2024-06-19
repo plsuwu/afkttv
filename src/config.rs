@@ -44,9 +44,13 @@ impl Config {
 
     // reads the auth config from the configuration filepath
     pub fn read(filepath: &PathBuf) -> Config {
-        // do pattern matching and call `write()` so that we get user input and write the auth info to that
-        // localdata toml file if it doesn't exist
+        // we will likely do pattern matching here, calling `write()` if the file(path) doesn't exist - user provides input
+        // and we write a correctly-formatted `config.toml` out to the expected directory
         let content = fs::read_to_string(filepath).unwrap_or_else(|_| {
+
+            // match an error to `std::io::ErrorKind::NotFound` and run the `write()` function
+            //
+            // just die rn, however
             eprintln!("[ERR] Unable to read contents of file: '{}'", filepath.to_string_lossy().to_string());
             panic!();
         });

@@ -102,7 +102,7 @@ impl WebsocketClient {
             }
         }
 
-        // return stream mutex arcs as a tuple
+        // return stream references
         return (writer_arc, reader_arc);
     }
 }

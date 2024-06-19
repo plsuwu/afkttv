@@ -33,7 +33,7 @@ async fn main() {
     let auth = format!("PASS oauth:{}", config.authorization.auth);
     let nick = format!("NICK {}", config.authorization.user);
     let user = format!(
-        "USER {} * :{}",
+        "USER {} 8 * :{}", // idk what `8` refers to here as it seems we can connect without it?
         config.authorization.user, config.authorization.user
     );
 
@@ -56,7 +56,7 @@ async fn main() {
             // add a small random jitter this timer for events sock (see linked docs)
             let rand_offset = get_rand_offset().await;
             println!(
-                "[{}][PING] Next ping timer in {}ms (offset {}ms)",
+                "[{}][PING]: Next ping timer in {}ms (offset {}ms)",
                 util::log_time().await,
                 240000 + rand_offset,
                 rand_offset
@@ -67,7 +67,7 @@ async fn main() {
             time::sleep(time::Duration::from_millis(240000 + rand_offset)).await;
 
             println!(
-                "[{}][PING] Initiating a keepalive: '{}'",
+                "[{}][PING]: Initiating a keepalive: '{}'",
                 util::log_time().await,
                 KEEPALIVE_PONG
             );
@@ -79,7 +79,7 @@ async fn main() {
                 .await
                 .send(KEEPALIVE_PING.into())
                 .await
-                .expect("[ERR] Failed to send keepalive ping.");
+                .expect("[ERR]: Failed to send keepalive ping.");
         }
     });
 
@@ -92,33 +92,44 @@ async fn main() {
 
 // decide if we need to respond with 'PONG' or if we can write direct to stdout
 async fn parse_incoming_irc(data: Message, writer: &WriterArc) {
-    let message = data.to_string();
+    let data_string = data.to_string(); // let binding for lifetime wrangling
+
+    let message = data_string
+        .trim()
+        .split("\r\n")
+        .into_iter()
+        .map(|l| l.trim())
+        .collect::<Vec<_>>();
 
     // incoming is checking for client pulse
-    if message.contains("PING :tmi.twitch.tv") {
-        let res = Message::Text(KEEPALIVE_PONG.into()); // we can also call this via `Message::Pong()`
+    if message.iter().all(|line| line.contains("PING :tmi.twitch.tv")) {
+        let res = Message::Text(KEEPALIVE_PONG.into()); // we can also call `Message::Pong()`
         writer
             .lock()
             .await
             .send(res)
             .await
             .expect("[ERR]: Failed while responding to PING.");
-        println!("[{}][PING] Keepalive response sent", util::log_time().await);
-
+        println!(
+            "[{}][PING]: Keepalive response sent",
+            util::log_time().await
+        );
         return;
     }
 
     // incoming is acknowledging our ping
-    if message.contains("PONG") {
-        println!("[{}][PING] Keepalive request acknowledged", util::log_time().await);
-
+    if message.iter().all(|line| line.contains("PONG :tmi.twitch.tv")) {
+        println!(
+            "[{}][PING]: Received keepalive acknowledge",
+            util::log_time().await
+        );
         return;
     }
 
     // incoming is generic (indent for readability)
-    println!("[{}][INCOMING] Message: ", util::log_time().await);
-    for line in message.lines() {
-        println!("   {}", line.trim());
+    println!("[{}][INCOMING]: Message: ", util::log_time().await);
+    for line in message {
+        println!("   {}", line);
     }
     println!("");
 
