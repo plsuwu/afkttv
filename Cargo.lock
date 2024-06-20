@@ -29,6 +29,7 @@ dependencies = [
  "lazy_static",
  "rand",
  "serde",
+ "text_io",
  "tokio",
  "tokio-tungstenite",
  "toml",
@@ -846,6 +847,12 @@ dependencies = [
  "rustix",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "text_io"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5f0c8eb2ad70c12a6a69508f499b3051c924f4b1cfeae85bfad96e6bc5bba46"
 
 [[package]]
 name = "thiserror"
