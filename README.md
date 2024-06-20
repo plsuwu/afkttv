@@ -1,6 +1,8 @@
 # afkttv
 
-> i want this to eventually auto-join streams to collect channel points and continue watch streaks or whatever they are called. may or maybe not be able to actually do that.
+i want this to eventually auto-join streams to collect channel points and continue watch streaks or whatever they are called. may or may not be able to build this functionality but its a fun little project either way.
+
+currently just a very very basic ttv websocket client.
 
 ## `config.toml`
 
