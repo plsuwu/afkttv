@@ -11,6 +11,8 @@ use std::{
 };
 use toml;
 
+pub const TMI: &str = ":tmi.twitch.tv";
+
 lazy_static! {
     #[derive(Debug)]
     pub static ref DATA_LOCAL: PathBuf = Path::new(&dirs::data_local_dir().unwrap()).to_path_buf();
@@ -36,7 +38,7 @@ impl Config {
 
         // 'cant find a config toml'
         println!(
-            "[{}][ERR]: Unable to find TTV auth information at '{}'.",
+            "[{}] [-]: Unable to find TTV auth information at '{}'.",
             util::log_time(),
             &CONFIG_FILEPATH.to_string_lossy().to_string()
         );
@@ -46,7 +48,7 @@ impl Config {
         // auth section
         input_buff += "[authorization]\nauth = \"";
         print!(
-            "[{}][CONF] TTV oauth ('PASS oauth:[enter_this_string]): ",
+            "[{}] [+] TTV oauth ('PASS oauth:[enter_this_string]): ",
             util::log_time()
         );
         stdout().flush().unwrap();
@@ -56,7 +58,7 @@ impl Config {
 
         // username section
         print!(
-            "[{}][CONF] TTV username ('NICK [enter_this_string]'): ",
+            "[{}] [+] TTV username ('NICK [enter_this_string]'): ",
             util::log_time()
         );
         stdout().flush().unwrap();
@@ -84,13 +86,13 @@ impl Config {
                     Ok(fc) => fc,
                     Err(e) => {
                         // no file @ filepath, error returned from write fn
-                        panic!("[ERR] Unable to create auth file: '{}'", e);
+                        panic!("[-] Unable to create auth file: '{}'", e);
                     }
                 },
                 _ => {
                     panic!(
                         // found config @ filepath but couldnt read its content
-                        "[ERR] Unable to read contents of file: '{}'",
+                        "[-] Unable to read contents of file: '{}'",
                         filepath.to_string_lossy().to_string()
                     );
                 }
@@ -99,7 +101,7 @@ impl Config {
 
         let parsed: Config = toml::from_str(&content).map_err(|err| {
             eprintln!(
-                "[ERR] Unable to parse file content into TOML structure: '{}'",
+                "[-] Unable to parse file content into TOML structure: '{}'",
                 filepath.to_string_lossy().to_string()
             );
 
