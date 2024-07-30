@@ -1,4 +1,4 @@
-use crate::{irc, socket::WriterArc};
+use crate::websocket::{irc, socket::WriterArc};
 use chrono::prelude::*;
 use futures_util::SinkExt;
 use rand::prelude::*;

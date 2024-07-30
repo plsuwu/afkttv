@@ -8,7 +8,7 @@ use tokio_tungstenite::{
     connect_async, tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream,
 };
 
-use crate::util::log_time;
+use crate::websocket::util::log_time;
 
 // fuck their chungus lives
 pub type WriterArc = Arc<Mutex<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>>>;

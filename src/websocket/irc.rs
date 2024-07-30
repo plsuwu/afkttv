@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
-use crate::{
-    config,
+use crate::config;
+use crate::websocket::{
     socket::{Client, ReaderArc, WriterArc},
     util::{self, log_time},
 };
@@ -91,38 +89,28 @@ impl Irc {
     }
 }
 
-pub async fn open_irc(url: &str) {
+pub async fn open_irc(url: &str, channel: &str) -> (ReaderArc, WriterArc) {
     let config = &config::CONFIG_READER;
 
     let auth = format!("PASS oauth:{}", config.authorization.auth);
     let nick = format!("NICK {}", config.authorization.user);
     let user = format!(
-        "USER {} 8 * :{}", // idk what the `8` refers to here
+        "USER {} 8 * :{}", // idk what the `8` refers to here :3
         config.authorization.user, config.authorization.user
     );
 
-    // this just joins the user's own channel until i work out how i want to retrieve channel
-    // activity
-    let channel = format!("JOIN #{}", config.authorization.user);
+    // channel name is passed as a CLI arg for this branch, auto-join twitch.tv/kori if no arg
+    // supplied
+    let channel = format!("JOIN #{}", channel);
     let irc = Irc::new(nick, user, channel, auth);
-
     let (irc_writer, irc_reader) = irc.irc_init(url).await;
-    let irc_writer_clone = irc_writer.clone();
-    tokio::task::spawn(async move {
-        loop {
-            util::jitter(&irc_writer_clone).await;
-        }
-    });
 
-    // loop the read stream to await incoming data
-    loop {
-        if let Some(data) = Client::read_socket(&irc_reader).await {
-            parse_msg(data, &irc_writer).await;
-        }
-    }
+    // we return the (writer, reader) bindings flipped to (reader, writer) as i just feel like this
+    // is more intuitive
+    return (irc_reader, irc_writer);
 }
 
-async fn parse_msg(data: Message, writer: &WriterArc) {
+pub async fn parse_msg(data: Message, writer: &WriterArc) {
     let vec = data.to_string();
     let data_vec = vec
         .split("\r\n")

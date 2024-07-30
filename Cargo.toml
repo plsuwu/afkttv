@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 chrono = "0.4.38"
+clap = { version = "4.5.11", features = ["derive"] }
 dirs = "5.0.1"
+fantoccini = "0.21.0"
 futures-channel = "0.3.30"
 futures-util = "0.3.30"
 lazy_static = "1.4.0"
@@ -16,6 +18,7 @@ rand = "0.8.5"
 regex = "1.10.5"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.120"
+sysinfo = "0.30.13"
 text_io = "0.1.12"
 tokio = { version = "*", features = ["full"] }
 tokio-tungstenite = { version = "0.23.1", features = ["native-tls"] }

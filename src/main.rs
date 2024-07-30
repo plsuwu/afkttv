@@ -1,19 +1,104 @@
-pub mod util;
-pub mod irc;
+pub mod coinflip;
 pub mod config;
-pub mod socket;
+pub mod websocket;
 
-pub const URL_CHAT: &str = "wss://irc-ws.chat.twitch.tv/"; // standard twitch chat WS API
-pub const URL_EVNT: &str = "wss://pubsub-edge.twitch.tv/v1"; // subscribes to a 'topic' for
-                                                             // updates
-#[tokio::main]
-async fn main() {
-    // irc sock
-    irc::open_irc(URL_CHAT).await;
+// pub mod headless;
+// use crate::coinflip::flipper;
+
+// use crate::headless;
+use crate::websocket::{irc,events, socket::Client, util};
+use clap::Parser;
+use coinflip::flipper;
+use futures_util::{self, future};
+
+pub const URL_CHAT: &str = "wss://irc-ws.chat.twitch.tv/";
+pub const URL_EVNT: &str = "wss://pubsub-edge.twitch.tv/v1";
+
+#[derive(Parser, Debug)]
+#[command(
+    version,
+    about,
+    long_about = "Automatically bet channel points on a coinflip"
+)]
+struct Args {
+    #[arg(short, long, default_value_t = false)]
+    irc: bool,
+
+    #[arg(short, long, default_value_t = true)]
+    event_edge: bool,
+
+    #[arg(
+        short,
+        long,
+        default_value_t = 100,
+        help = "Sets the bet as a percentage of available channel points (whole integer; 0 - 100)."
+    )]
+    percent: u8,
+
+    #[arg(short, long)]
+    channel: Option<String>,
 }
 
-// @badge-info=;badges=twitch-recap-2023/1;client-nonce=e89f4edd42f0fa45a92a478315eaf2d0;color=#008000;
-// display-name=Froguto;emotes=;first-msg=1;flags=;id=a16ccb0c-319f-4231-936c-a64a82d51075;mod=0;
-// returning-chatter=0;room-id=1054004535;subscriber=0;tmi-sent-ts=1721571417416;turbo=0;user-id=81244346;
-// user-type= :froguto!froguto@froguto.tmi.twitch.tv PRIVMSG #camizolecorzette :Don't supply them with crimes against humanity please
+#[tokio::main]
+async fn main() {
+    let args = Args::parse();
+    let mut futures = Vec::new();
 
+    let channel: &str = match &args.channel {
+        Some(name) => name,
+        // None => "kori",
+        None => "plss",
+    };
+
+
+    if args.irc {
+        let (irc_reader, irc_writer) = irc::open_irc(URL_CHAT, &channel).await;
+        let irc_writer_clone = irc_writer.clone();
+
+        let keepalive = tokio::task::spawn(async move {
+            loop {
+                util::jitter(&irc_writer_clone).await;
+            }
+        });
+        futures.push(keepalive);
+
+        let irc_client = tokio::task::spawn(async move {
+            loop {
+                if let Some(data) = Client::read_socket(&irc_reader).await {
+                    irc::parse_msg(data, &irc_writer).await;
+                }
+            }
+        });
+        futures.push(irc_client);
+    }
+
+    if args.event_edge {
+
+        let (event_reader, event_writer) = events::open_event(URL_EVNT, &channel).await;
+        let event_writer_clone = event_writer.clone();
+        let keepalive_event = tokio::task::spawn(async move {
+            loop {
+                util::jitter(&event_writer_clone).await;
+            }
+        });
+        futures.push(keepalive_event);
+
+        let event_client = tokio::task::spawn(async move {
+            loop {
+                if let Some(data) = Client::read_socket(&event_reader).await {
+                    // events::parse_msg(data, &event_writer).await;
+                    println!("{}", &data);
+                }
+            }
+        });
+        futures.push(event_client);
+
+    }
+
+    // futures = vec![keepalive, irc_client];
+    let _future_handles = future::join_all(futures).await;
+
+    // tokio::task::spawn(async move {
+    //     headless::browser::browser("plss").await.unwrap();
+    // });
+}
